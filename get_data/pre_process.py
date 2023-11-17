@@ -10,12 +10,16 @@ Output:
 """
 import logging
 import argparse
+import re
 
 from googletrans import Translator
 
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 
 def process(input_path, output_src, output_target, src_lang, dest_lang):
+    # TODO: Add pre-processing to eliminate symbols + strip + try catch
+    # TODO: Handle many sentence together
+    MIN_CHARACTER=30
     MAX_CHARACTER=600
     with open(input_path, "r") as f:
         src_lst = f.readlines()
@@ -23,7 +27,7 @@ def process(input_path, output_src, output_target, src_lang, dest_lang):
     new_tgt = []
     translator = Translator()
     for idx, sentence in enumerate(src_lst):
-        if len(sentence) > MAX_CHARACTER:
+        if len(sentence) > MAX_CHARACTER or len(sentence) < MIN_CHARACTER:
             continue
         new_src.append(sentence)
         new_tgt.append(translator.translate(sentence,src=src_lang, dest=dest_lang))
