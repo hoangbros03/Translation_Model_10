@@ -309,7 +309,7 @@ class Transformer(nn.Module):
             s = time.time()
             for i, batch in enumerate(self.train_iter): 
                 if i==0:
-                    print(f"Shape: src {batch.src.shape}, tgt {batch.tgt.shape}")
+                    print(f"Shape: src {batch.src.shape}, tgt {batch.trg.shape}")
                 loss = self.train_step(optimizer, batch, criterion)
                 total_loss += loss
                 
