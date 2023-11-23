@@ -20,25 +20,32 @@ def process(input_path, output_src, output_target, src_lang, dest_lang, trans_ty
     # For weird reason, step will not be exceed 30!
     step = min(30,step)
     
-    MIN_CHARACTER=30
-    MAX_CHARACTER=600
+    MIN_WORD=2
+    MAX_WORD=200
     with open(input_path, "r") as f:
         src_lst = f.readlines()
     new_src = []
     new_tgt = []
     translator = Translator()
     if trans_type=="group":
-        for sentence_it in range(0, len(src_lst), step):
+        sentence_it = 0
+        while sentence_it < len(src_lst):
+        # for sentence_it in range(0, len(src_lst), step):
             # standard_src_lst = [sentence.replace('.', '') for sentence in src_lst[sentence_it:min(len(src_lst), sentence_it+step)]]
             concat_sentence = " ".join(src_lst[sentence_it:min(len(src_lst), sentence_it+step)])
-            print(type(concat_sentence))
+            # print(type(concat_sentence))
             # concat_sentence = concat_sentence.replace('\n', '')
-            print(f"{sentence_it}:{min(len(src_lst), sentence_it+step)}")
-            trans_concat_sentence = translator.translate(concat_sentence,src=src_lang, dest=dest_lang).text
+            # print(f"{sentence_it}:{min(len(src_lst), sentence_it+step)}")
+            try:
+                trans_concat_sentence = translator.translate(concat_sentence,src=src_lang, dest=dest_lang).text
+            except Exception as e:
+                logging.info("Maybe read time out, however we will try again...")
+                continue
             trans_translate = re.split('\n', trans_concat_sentence)
             # Check if num of sentence is equal
-            print(f"Offset: {len(trans_translate) - (min(len(src_lst), sentence_it+step) - sentence_it)}")
+            # print(f"Offset: {len(trans_translate) - (min(len(src_lst), sentence_it+step) - sentence_it)}")
             if len(trans_translate) != min(len(src_lst), sentence_it+step) - sentence_it:
+                sentence_it += step
                 continue
             else:
                 trans_translate = [sentence.replace('\n', '').strip() for sentence in trans_translate if sentence.strip()]
@@ -46,12 +53,17 @@ def process(input_path, output_src, output_target, src_lang, dest_lang, trans_ty
                 new_tgt.extend(trans_translate)
                 if (sentence_it+1)%(max(len(src_lst)//10,1))==0:
                     logging.info(f"Processed {sentence_it+1}/{len(src_lst)}")
+                sentence_it += step
+                
     elif trans_type=="separate":
         for idx, sentence in enumerate(src_lst):
-            if len(sentence) > MAX_CHARACTER or len(sentence) < MIN_CHARACTER:
+            if len(sentence.split(" ")) > MAX_WORD or len(sentence.split(" ")) < MIN_WORD:
                 continue
             new_src.append(sentence)
-            new_tgt.append(translator.translate(sentence,src=src_lang, dest=dest_lang).text)
+            try:
+                new_tgt.append(translator.translate(sentence,src=src_lang, dest=dest_lang).text)
+            except Exception as e:
+                continue
             if (idx+1)%(max(len(src_lst)//10,1))==0:
                 logging.info(f"Processed {idx+1}/{len(src_lst)}")
     else:
