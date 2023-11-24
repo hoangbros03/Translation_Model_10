@@ -3,6 +3,7 @@ import torch.nn as nn
 import torchtext.data as data
 import copy, time, io
 import numpy as np
+import wandb
 
 from modules.prototypes import Encoder, Decoder, Config as DefaultConfig
 from modules.loader import DefaultLoader, MultiLoader
@@ -23,13 +24,14 @@ class Transformer(nn.Module):
     Implementation of Transformer architecture based on the paper `Attention is all you need`.
     Source: https://arxiv.org/abs/1706.03762
     """
-    def __init__(self, mode=None, model_dir=None, config=None):
+    def __init__(self, mode=None, model_dir=None, config=None, log=None):
         super().__init__()
 
         # Use specific config file if provided otherwise use the default config instead
         self.config = DefaultConfig() if(config is None) else Config(config)
         opt = self.config
         self.device = opt.get('device', const.DEFAULT_DEVICE)
+        self.log = log
 
         if('train_data_location' in opt or 'train_data_location' in opt.get("data", {})):
             # monolingual data detected
@@ -253,6 +255,7 @@ class Transformer(nn.Module):
 
         trg_pad = self.TRG.vocab.stoi['<pad>']     
         # load model into specific device (GPU/CPU) memory   
+        
         logging.info("%s * src vocab size = %s"%(self.loader._language_tuple[0] ,len(self.SRC.vocab)))
         logging.info("%s * tgt vocab size = %s"%(self.loader._language_tuple[1] ,len(self.TRG.vocab)))
         logging.info("Building model...")
@@ -276,6 +279,22 @@ class Transformer(nn.Module):
         d_model = opt["d_model"]
         n_warmup_steps = opt["n_warmup_steps"]
         optimizer_params = opt.get("optimizer_params", dict({}))
+
+        if self.log:
+            run = wandb.init(
+            # Set the project where this run will be logged
+            project="translation_model_10",
+            config={
+                    "src_vocab_size": len(self.SRC.vocab),
+                    "tgt vocab size": len(self.TRG.vocab),
+                    "lr": lr,
+                    "d_model": d_model,
+                    "n_layers": opt['n_layers'],
+                    "epochs": opt['epochs'],
+                    "batch_size": opt['batch_size']
+                }
+            # Track hyperparameters and run metadata
+            )
 
         if optim_algo not in optimizers:
             raise ValueError("Unknown optimizer: {}".format(optim_algo))
@@ -319,6 +338,12 @@ class Transformer(nn.Module):
                     et = time.time() - s
                     # print('epoch: {:03d} - iter: {:05d} - train loss: {:.4f} - time elapsed/per batch: {:.4f} {:.4f}'.format(epoch, i+1, avg_loss, et, et / opt['printevery']))
                     logging.info('epoch: {:03d} - iter: {:05d} - train loss: {:.4f} - time elapsed/per batch: {:.4f} {:.4f}'.format(epoch, i+1, avg_loss, et, et / opt['printevery']))
+                    if self.log:
+                        wandb.log({
+                            "epoch": epoch,
+                            "iter": i+1,
+                            "train_loss": avg_loss
+                        })
                     total_loss = 0
                     s = time.time()
             
@@ -340,9 +365,24 @@ class Transformer(nn.Module):
                 best_model_score = saver.save_model_best_to_path(model, model_dir, best_model_score, bleuscore, maximum_saved_model=opt.get('maximum_saved_model_eval', const.DEFAULT_NUM_KEEP_MODEL_TRAIN))
                 # print('epoch: {:03d} - iter: {:05d} - valid loss: {:.4f} - bleu score: {:.4f} - full evaluation time: {:.4f}'.format(epoch, i, valid_loss, bleuscore, time.time() - s))
                 logging.info('epoch: {:03d} - iter: {:05d} - valid loss: {:.4f} - bleu score: {:.4f} - full evaluation time: {:.4f}'.format(epoch, i, valid_loss, bleuscore, time.time() - s))
+                if self.log:
+                        wandb.log({
+                            "epoch": epoch,
+                            "iter": i,
+                            "valid_loss": valid_loss,
+                            "bleu_score": bleuscore,
+                            "full_eval_time": time.time() - s
+                        })
             else:
                 # print('epoch: {:03d} - iter: {:05d} - valid loss: {:.4f} - validation time: {:.4f}'.format(epoch, i, valid_loss, time.time() - s))
                 logging.info('epoch: {:03d} - iter: {:05d} - valid loss: {:.4f} - validation time: {:.4f}'.format(epoch, i, valid_loss, time.time() - s))
+                if self.log:
+                        wandb.log({
+                            "epoch": epoch,
+                            "iter": i,
+                            "valid_loss": valid_loss,
+                            "eval_time": time.time() - s
+                        })
 
     def run_infer(self, features_file, predictions_file, src_lang=None, trg_lang=None, config=None, batch_size=None):
         opt = self.config

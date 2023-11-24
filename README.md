@@ -114,10 +114,17 @@ Sau đó có thể chạy với câu lệnh:
 python -m bin.main train --model Transformer --model_dir $MODEL/en-vi.model --config $CONFIG/en_vi.yml
 ```
 
+You also can run with wandb by:
+```bash
+python -m bin.main train --model Transformer --model_dir $MODEL/en-vi.model --config $CONFIG/en_vi.yml --wandb_key $your_wandb_key
+```
+
+
 **Note**:
 Ở đây:
 - $MODEL là dường dẫn tới vị trí lưu mô hình. Sau khi huấn luyện mô hình, thư mục chứa mô hình bao gồm mô hình huyến luyện, file config, file log, vocab.
 - $CONFIG là đường dẫn tới vị trí chứa file config
+- $your_wandb_key is your wandb key
 
 ## Bước 3: Dịch 
 
