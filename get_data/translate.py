@@ -16,7 +16,7 @@ from googletrans import Translator
 
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 
-def process(input_path, output_src, output_target, src_lang, dest_lang, trans_type="group", step=30):
+def process(input_path, output_src, output_target, src_lang, dest_lang, trans_type="group", step=30, it_start = 0):
     # For weird reason, step will not be exceed 30!
     step = min(30,step)
     
@@ -28,7 +28,7 @@ def process(input_path, output_src, output_target, src_lang, dest_lang, trans_ty
     new_tgt = []
     translator = Translator()
     if trans_type=="group":
-        sentence_it = 0
+        sentence_it = it_start
         while sentence_it < len(src_lst):
         # for sentence_it in range(0, len(src_lst), step):
             # standard_src_lst = [sentence.replace('.', '') for sentence in src_lst[sentence_it:min(len(src_lst), sentence_it+step)]]
@@ -85,6 +85,7 @@ if __name__=="__main__":
     parser.add_argument("-d","--dest_lang", help='Destination language', type=str, default='lo')
     parser.add_argument("--step", help='step if translate by group', type=int, default=80)
     parser.add_argument("-t","--trans_type", help='Type of translate (group | separate)', type=str, default='group')
+    parser.add_argument("-si","--start_index", help='Start index of sentence inside file to translate', type=int, default=0)
 
     args = parser.parse_args()
     process(
@@ -94,5 +95,6 @@ if __name__=="__main__":
         args.src_lang,
         args.dest_lang,
         args.trans_type,
-        args.step
+        args.step,
+        args.start_index
     )
