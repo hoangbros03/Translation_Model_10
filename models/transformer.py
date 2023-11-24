@@ -24,14 +24,14 @@ class Transformer(nn.Module):
     Implementation of Transformer architecture based on the paper `Attention is all you need`.
     Source: https://arxiv.org/abs/1706.03762
     """
-    def __init__(self, mode=None, model_dir=None, config=None, log=None):
+    def __init__(self, mode=None, model_dir=None, config=None):
         super().__init__()
 
         # Use specific config file if provided otherwise use the default config instead
         self.config = DefaultConfig() if(config is None) else Config(config)
         opt = self.config
         self.device = opt.get('device', const.DEFAULT_DEVICE)
-        self.log = log
+    
 
         if('train_data_location' in opt or 'train_data_location' in opt.get("data", {})):
             # monolingual data detected
@@ -248,7 +248,8 @@ class Transformer(nn.Module):
         translated_batch = self.decode_strategy.translate_batch(batch_sentences, trg_lang=trg_lang, src_size_limit=input_max_length, output_tokens=True, debug=False)
         return self.loader.detokenize(translated_batch) if not output_tokens else translated_batch
 
-    def run_train(self, model_dir=None, config=None):
+    def run_train(self, model_dir=None, config=None, log=None):
+        self.log = log
         opt = self.config
         from utils.logging import init_logger
         logging = init_logger(model_dir, opt.get('log_file_models'))
