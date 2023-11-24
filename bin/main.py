@@ -1,6 +1,8 @@
 import models
 import argparse, os
 from shutil import copy2 as copy
+
+import wandb
 from modules.config import find_all_config
 
 OVERRIDE_RUN_MODE = {"serve": "infer", "debug": "eval"}
@@ -36,6 +38,7 @@ if __name__ == "__main__":
   parser.add_argument("--checkpoint", type=str, default=None, help="All mode: specify to load the checkpoint into model.")
   parser.add_argument("--checkpoint_idx", type=int, default=0, help="All mode: specify the epoch of the checkpoint loaded. Only useful for training.")
   parser.add_argument("--serve_path", type=str, default=None, help="File to save TorchScript model into.")
+  parser.add_argument("--wandb_key", type=str, default=None, help="Wandb key if you want to log anything.")
   
   args = parser.parse_args()
   # create directory if not exist
@@ -49,6 +52,10 @@ if __name__ == "__main__":
     print("Config specified, copying all to model dir")
     for subpath in config_path:
       copy(subpath, args.model_dir)
+
+
+  if args.wandb_key is not None:
+    wandb.login(key=args.wandb_key)
     
   # load model. Specific run mode required converting
   run_mode = OVERRIDE_RUN_MODE.get(args.run_mode, args.run_mode)
@@ -57,9 +64,9 @@ if __name__ == "__main__":
   # run model
   run_mode = args.run_mode
   if(run_mode == "train"):
-    model.run_train(model_dir=args.model_dir, config=config_path)
+    model.run_train(model_dir=args.model_dir, config=config_path, log=bool(args.wandb_key))
   elif(run_mode == "eval"):
-    model.run_eval(model_dir=args.model_dir, config=config_path)
+    model.run_eval(model_dir=args.model_dir, config=config_path, log=bool(args.wandb_key))
   elif(run_mode == "infer"):
     model.run_infer(args.features_file, args.predictions_file, src_lang=args.src_lang, trg_lang=args.trg_lang, config=config_path, batch_size=args.infer_batch_size)
   elif(run_mode == "debug"):

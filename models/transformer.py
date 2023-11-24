@@ -3,6 +3,7 @@ import torch.nn as nn
 import torchtext.data as data
 import copy, time, io
 import numpy as np
+import wandb
 
 from modules.prototypes import Encoder, Decoder, Config as DefaultConfig
 from modules.loader import DefaultLoader, MultiLoader
@@ -30,6 +31,7 @@ class Transformer(nn.Module):
         self.config = DefaultConfig() if(config is None) else Config(config)
         opt = self.config
         self.device = opt.get('device', const.DEFAULT_DEVICE)
+    
 
         if('train_data_location' in opt or 'train_data_location' in opt.get("data", {})):
             # monolingual data detected
@@ -246,13 +248,15 @@ class Transformer(nn.Module):
         translated_batch = self.decode_strategy.translate_batch(batch_sentences, trg_lang=trg_lang, src_size_limit=input_max_length, output_tokens=True, debug=False)
         return self.loader.detokenize(translated_batch) if not output_tokens else translated_batch
 
-    def run_train(self, model_dir=None, config=None):
+    def run_train(self, model_dir=None, config=None, log=None):
+        self.log = log
         opt = self.config
         from utils.logging import init_logger
         logging = init_logger(model_dir, opt.get('log_file_models'))
 
         trg_pad = self.TRG.vocab.stoi['<pad>']     
         # load model into specific device (GPU/CPU) memory   
+        
         logging.info("%s * src vocab size = %s"%(self.loader._language_tuple[0] ,len(self.SRC.vocab)))
         logging.info("%s * tgt vocab size = %s"%(self.loader._language_tuple[1] ,len(self.TRG.vocab)))
         logging.info("Building model...")
@@ -276,6 +280,22 @@ class Transformer(nn.Module):
         d_model = opt["d_model"]
         n_warmup_steps = opt["n_warmup_steps"]
         optimizer_params = opt.get("optimizer_params", dict({}))
+
+        if self.log:
+            run = wandb.init(
+            # Set the project where this run will be logged
+            project="translation_model_10",
+            config={
+                    "src_vocab_size": len(self.SRC.vocab),
+                    "tgt vocab size": len(self.TRG.vocab),
+                    "lr": lr,
+                    "d_model": d_model,
+                    "n_layers": opt['n_layers'],
+                    "epochs": opt['epochs'],
+                    "batch_size": opt['batch_size']
+                }
+            # Track hyperparameters and run metadata
+            )
 
         if optim_algo not in optimizers:
             raise ValueError("Unknown optimizer: {}".format(optim_algo))
@@ -319,6 +339,12 @@ class Transformer(nn.Module):
                     et = time.time() - s
                     # print('epoch: {:03d} - iter: {:05d} - train loss: {:.4f} - time elapsed/per batch: {:.4f} {:.4f}'.format(epoch, i+1, avg_loss, et, et / opt['printevery']))
                     logging.info('epoch: {:03d} - iter: {:05d} - train loss: {:.4f} - time elapsed/per batch: {:.4f} {:.4f}'.format(epoch, i+1, avg_loss, et, et / opt['printevery']))
+                    if self.log:
+                        wandb.log({
+                            "epoch": epoch,
+                            "iter": i+1,
+                            "train_loss": avg_loss
+                        })
                     total_loss = 0
                     s = time.time()
             
@@ -340,9 +366,24 @@ class Transformer(nn.Module):
                 best_model_score = saver.save_model_best_to_path(model, model_dir, best_model_score, bleuscore, maximum_saved_model=opt.get('maximum_saved_model_eval', const.DEFAULT_NUM_KEEP_MODEL_TRAIN))
                 # print('epoch: {:03d} - iter: {:05d} - valid loss: {:.4f} - bleu score: {:.4f} - full evaluation time: {:.4f}'.format(epoch, i, valid_loss, bleuscore, time.time() - s))
                 logging.info('epoch: {:03d} - iter: {:05d} - valid loss: {:.4f} - bleu score: {:.4f} - full evaluation time: {:.4f}'.format(epoch, i, valid_loss, bleuscore, time.time() - s))
+                if self.log:
+                        wandb.log({
+                            "epoch": epoch,
+                            "iter": i,
+                            "valid_loss": valid_loss,
+                            "bleu_score": bleuscore,
+                            "full_eval_time": time.time() - s
+                        })
             else:
                 # print('epoch: {:03d} - iter: {:05d} - valid loss: {:.4f} - validation time: {:.4f}'.format(epoch, i, valid_loss, time.time() - s))
                 logging.info('epoch: {:03d} - iter: {:05d} - valid loss: {:.4f} - validation time: {:.4f}'.format(epoch, i, valid_loss, time.time() - s))
+                if self.log:
+                        wandb.log({
+                            "epoch": epoch,
+                            "iter": i,
+                            "valid_loss": valid_loss,
+                            "eval_time": time.time() - s
+                        })
 
     def run_infer(self, features_file, predictions_file, src_lang=None, trg_lang=None, config=None, batch_size=None):
         opt = self.config
