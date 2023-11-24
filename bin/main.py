@@ -2,6 +2,7 @@ import models
 import argparse, os
 from shutil import copy2 as copy
 
+import torch
 import wandb
 from modules.config import find_all_config
 
@@ -60,6 +61,10 @@ if __name__ == "__main__":
   # load model. Specific run mode required converting
   run_mode = OVERRIDE_RUN_MODE.get(args.run_mode, args.run_mode)
   model = models.AvailableModels[args.model](config=config_path, model_dir=args.model_dir, mode=run_mode)
+
+  device = 'cuda' if torch.cuda.is_available() else 'cpu'
+  model= nn.DataParallel(model)
+  model.to(device)
   model.load_checkpoint(args.model_dir, checkpoint=args.checkpoint, checkpoint_idx=args.checkpoint_idx)
   # run model
   run_mode = args.run_mode
