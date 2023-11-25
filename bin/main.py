@@ -64,23 +64,29 @@ if __name__ == "__main__":
   model = models.AvailableModels[args.model](config=config_path, model_dir=args.model_dir, mode=run_mode)
 
   device = 'cuda' if torch.cuda.is_available() else 'cpu'
-  model= nn.DataParallel(model)
-  model.to(device)
-  model.load_checkpoint(args.model_dir, checkpoint=args.checkpoint, checkpoint_idx=args.checkpoint_idx)
+  if device.find('cuda')!=-1:
+    torch.distributed.init_process_group(backend='nccl')
+  else:
+    torch.distributed.init_process_group(backend='gloo')
+
+  model=nn.parallel.DistributedDataParallel(model)
+  # model= nn.DataParallel(model)
+  # model.to(device)
+  model.module.load_checkpoint(args.model_dir, checkpoint=args.checkpoint, checkpoint_idx=args.checkpoint_idx)
   # run model
   run_mode = args.run_mode
   if(run_mode == "train"):
-    model.run_train(model_dir=args.model_dir, config=config_path, log=bool(args.wandb_key))
+    model.module.run_train(model_dir=args.model_dir, config=config_path, log=bool(args.wandb_key))
   elif(run_mode == "eval"):
-    model.run_eval(model_dir=args.model_dir, config=config_path, log=bool(args.wandb_key))
+    model.module.run_eval(model_dir=args.model_dir, config=config_path, log=bool(args.wandb_key))
   elif(run_mode == "infer"):
-    model.run_infer(args.features_file, args.predictions_file, src_lang=args.src_lang, trg_lang=args.trg_lang, config=config_path, batch_size=args.infer_batch_size)
+    model.module.run_infer(args.features_file, args.predictions_file, src_lang=args.src_lang, trg_lang=args.trg_lang, config=config_path, batch_size=args.infer_batch_size)
   elif(run_mode == "debug"):
     raise NotImplementedError
-    model.run_debug(model_dir=args.model_dir, config=config_path)
+    model.module.run_debug(model_dir=args.model_dir, config=config_path)
   elif(run_mode == "serve"):
     if(args.serve_path is None):
       raise parser.ArgumentError("In serving, --serve_path cannot be empty")
-    model.prepare_serve(args.serve_path, model_dir=args.model_dir, config=config_path)
+    model.module.prepare_serve(args.serve_path, model_dir=args.model_dir, config=config_path)
   else:
     raise ValueError("Run mode {:s} not implemented.".format(run_mode))
