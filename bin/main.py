@@ -3,6 +3,7 @@ import argparse, os
 from shutil import copy2 as copy
 
 import torch
+from torch import nn
 import wandb
 from modules.config import find_all_config
 
