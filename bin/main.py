@@ -64,14 +64,14 @@ if __name__ == "__main__":
   model = models.AvailableModels[args.model](config=config_path, model_dir=args.model_dir, mode=run_mode)
 
   device = 'cuda' if torch.cuda.is_available() else 'cpu'
-  if device.find('cuda')!=-1:
-    torch.distributed.init_process_group(backend='nccl')
-  else:
-    torch.distributed.init_process_group(backend='gloo')
+  # if device.find('cuda')!=-1:
+  #   torch.distributed.init_process_group(backend='nccl')
+  # else:
+  #   torch.distributed.init_process_group(backend='gloo')
 
-  model=nn.parallel.DistributedDataParallel(model)
-  # model= nn.DataParallel(model)
-  # model.to(device)
+  # model=nn.parallel.DistributedDataParallel(model)
+  model= nn.DataParallel(model)
+  model.to(device)
   model.module.load_checkpoint(args.model_dir, checkpoint=args.checkpoint, checkpoint_idx=args.checkpoint_idx)
   # run model
   run_mode = args.run_mode
