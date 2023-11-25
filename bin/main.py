@@ -24,25 +24,21 @@ def create_torchscript_model(model, model_dir, model_name):
   save_location = os.path.join(model_dir, model_name)
   traced_model.save(save_location)
 
-if __name__ == "__main__":
-  parser = argparse.ArgumentParser(description="Main argument parser")
-  parser.add_argument("run_mode", choices=("train", "eval", "infer", "debug", "serve"), help="Main running mode of the program")
-  parser.add_argument("--model", type=str, choices=models.AvailableModels.keys(), help="The type of model to be ran")
-  parser.add_argument("--model_dir", type=str, required=True, help="Location of model")
-  parser.add_argument("--config", type=str, nargs="+", default=None, help="Location of the config file")
-  parser.add_argument("--no_keeping_config", action="store_false", help="If set, do not copy the config file to the model directory")
-  # arguments for inference
-  parser.add_argument("--features_file", type=str, help="Inference mode: Provide the location of features file")
-  parser.add_argument("--predictions_file", type=str, help="Inference mode: Provide Location of output file which is predicted from features file")
-  parser.add_argument("--src_lang", type=str, help="Inference mode: Provide language used by source file")
-  parser.add_argument("--trg_lang", type=str, default=None, help="Inference mode: Choose language that is translated from source file. NOTE: only specify for multilingual model")
-  parser.add_argument("--infer_batch_size", type=int, default=None, help="Specify the batch_size to run the model with. Default use the config value.")
-  parser.add_argument("--checkpoint", type=str, default=None, help="All mode: specify to load the checkpoint into model.")
-  parser.add_argument("--checkpoint_idx", type=int, default=0, help="All mode: specify the epoch of the checkpoint loaded. Only useful for training.")
-  parser.add_argument("--serve_path", type=str, default=None, help="File to save TorchScript model into.")
-  parser.add_argument("--wandb_key", type=str, default=None, help="Wandb key if you want to log anything.")
-  
-  args = parser.parse_args()
+def setup_distributed():
+  """
+  Init process group to train on multiple GPUs
+  """
+  device = 'cuda' if torch.cuda.is_available() else 'cpu'
+  if device.find('cuda')!=-1:
+    torch.distributed.init_process_group(backend='nccl')
+  else:
+    torch.distributed.init_process_group(backend='gloo')
+
+def process(args):
+  """
+  Main part of this file to run the program
+  """
+  setup_distributed()
   # create directory if not exist
   os.makedirs(args.model_dir, exist_ok=True)
   config_path = args.config
@@ -62,12 +58,6 @@ if __name__ == "__main__":
   # load model. Specific run mode required converting
   run_mode = OVERRIDE_RUN_MODE.get(args.run_mode, args.run_mode)
   model = models.AvailableModels[args.model](config=config_path, model_dir=args.model_dir, mode=run_mode)
-
-  device = 'cuda' if torch.cuda.is_available() else 'cpu'
-  if device.find('cuda')!=-1:
-    torch.distributed.init_process_group(backend='nccl')
-  else:
-    torch.distributed.init_process_group(backend='gloo')
 
   model=nn.parallel.DistributedDataParallel(model)
   # model= nn.DataParallel(model)
@@ -90,3 +80,24 @@ if __name__ == "__main__":
     model.module.prepare_serve(args.serve_path, model_dir=args.model_dir, config=config_path)
   else:
     raise ValueError("Run mode {:s} not implemented.".format(run_mode))
+
+
+if __name__ == "__main__":
+  parser = argparse.ArgumentParser(description="Main argument parser")
+  parser.add_argument("run_mode", choices=("train", "eval", "infer", "debug", "serve"), help="Main running mode of the program")
+  parser.add_argument("--model", type=str, choices=models.AvailableModels.keys(), help="The type of model to be ran")
+  parser.add_argument("--model_dir", type=str, required=True, help="Location of model")
+  parser.add_argument("--config", type=str, nargs="+", default=None, help="Location of the config file")
+  parser.add_argument("--no_keeping_config", action="store_false", help="If set, do not copy the config file to the model directory")
+  # arguments for inference
+  parser.add_argument("--features_file", type=str, help="Inference mode: Provide the location of features file")
+  parser.add_argument("--predictions_file", type=str, help="Inference mode: Provide Location of output file which is predicted from features file")
+  parser.add_argument("--src_lang", type=str, help="Inference mode: Provide language used by source file")
+  parser.add_argument("--trg_lang", type=str, default=None, help="Inference mode: Choose language that is translated from source file. NOTE: only specify for multilingual model")
+  parser.add_argument("--infer_batch_size", type=int, default=None, help="Specify the batch_size to run the model with. Default use the config value.")
+  parser.add_argument("--checkpoint", type=str, default=None, help="All mode: specify to load the checkpoint into model.")
+  parser.add_argument("--checkpoint_idx", type=int, default=0, help="All mode: specify the epoch of the checkpoint loaded. Only useful for training.")
+  parser.add_argument("--serve_path", type=str, default=None, help="File to save TorchScript model into.")
+  parser.add_argument("--wandb_key", type=str, default=None, help="Wandb key if you want to log anything.")
+  args = parser.parse_args()
+  process(args)
