@@ -43,7 +43,7 @@ class DefaultLoader:
 
   def build_field(self, **kwargs):
     """Build fields that will handle the conversion from token->idx and vice versa. To be overriden by MultiLoader."""
-    return Field(**kwargs), Field(init_token=const.DEFAULT_SOS, eos_token=const.DEFAULT_EOS, **kwargs)
+    return Field(tokenize=tokenize,**kwargs), Field(init_token=const.DEFAULT_SOS, eos_token=const.DEFAULT_EOS,tokenize=tokenize, **kwargs)
 
   def build_vocab(self, fields, model_path=None, data=None, **kwargs):
     """Build the vocabulary object for torchtext Field. There are three flows:
