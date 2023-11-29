@@ -88,9 +88,9 @@ class DecoderLayer(nn.Module):
         self.attn_2 = layers.MultiHeadAttention(heads, d_model, dropout=dropout)
         self.ff = layers.FeedForward(d_model, dropout=dropout)
 
-        self.attn2 = layers.MultiHeadAttention(heads, d_model, dropout=dropout)
-        self.dropout_add_1 = nn.Dropout(dropout)
-        self.norm_add_1 = layers.Norm(d_model)
+        # self.attn2 = layers.MultiHeadAttention(heads, d_model, dropout=dropout)
+        # self.dropout_add_1 = nn.Dropout(dropout)
+        # self.norm_add_1 = layers.Norm(d_model)
 
     def forward(self, x, memory, src_mask, trg_mask):
         """Run the decoding layer
@@ -108,10 +108,10 @@ class DecoderLayer(nn.Module):
         x_sa, _ = self.attn_1(x2, x2, x2, trg_mask)
         x = x + self.dropout_1(x_sa)
         x2 = self.norm_2(x)
-        # Add self.attn
-        x_sa, sa = self.attn2(x2, x2, x2, trg_mask)
-        x = x + self.dropout_add_1(x_sa)
-        x2 = self.norm_add_1(x)
+        # # Add self.attn
+        # x_sa, sa = self.attn2(x2, x2, x2, trg_mask)
+        # x = x + self.dropout_add_1(x_sa)
+        # x2 = self.norm_add_1(x)
         
         # Normal multi-head attention
         x_na, na = self.attn_2(x2, memory, memory, src_mask)
