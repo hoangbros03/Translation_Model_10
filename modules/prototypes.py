@@ -29,6 +29,13 @@ class EncoderLayer(nn.Module):
         self.ff = layers.FeedForward(d_model, dropout=dropout)
         self.dropout_1 = nn.Dropout(dropout)
         self.dropout_2 = nn.Dropout(dropout)
+        # Add self.attn
+        self.attn2 = layers.MultiHeadAttention(heads, d_model, dropout=dropout)
+        self.attn3 = layers.MultiHeadAttention(heads, d_model, dropout=dropout)
+        self.dropout_add_1 = nn.Dropout(dropout)
+        self.dropout_add_2 = nn.Dropout(dropout)
+        self.norm_add_1 = layers.Norm(d_model)
+        self.norm_add_2 = layers.Norm(d_model)
 
     def forward(self, x, src_mask):
         """Run the encoding layer
@@ -41,9 +48,22 @@ class EncoderLayer(nn.Module):
         """
         x2 = self.norm_1(x)
         # Self attention only
-        x_sa, sa = self.attn(x2, x2, x2, src_mask)
+        x_sa, _ = self.attn(x2, x2, x2, src_mask)
+        
         x = x + self.dropout_1(x_sa)
         x2 = self.norm_2(x)
+
+        # # Add another 2 self.attn
+        x_sa2, _ = self.attn2(x2,x2,x2,src_mask)
+
+        x = x +self.dropout_add_1(x_sa2)
+        x2= self.norm_add_1(x)
+
+        x_sa3, sa = self.attn3(x2,x2,x2,src_mask)
+
+        x = x +self.dropout_add_2(x_sa3)
+        x2= self.norm_add_2(x)
+
         x = x + self.dropout_2(self.ff(x2))
         return x, sa
 
@@ -68,6 +88,10 @@ class DecoderLayer(nn.Module):
         self.attn_2 = layers.MultiHeadAttention(heads, d_model, dropout=dropout)
         self.ff = layers.FeedForward(d_model, dropout=dropout)
 
+        self.attn2 = layers.MultiHeadAttention(heads, d_model, dropout=dropout)
+        self.dropout_add_1 = nn.Dropout(dropout)
+        self.norm_add_1 = layers.Norm(d_model)
+
     def forward(self, x, memory, src_mask, trg_mask):
         """Run the decoding layer
         Args:
@@ -81,13 +105,19 @@ class DecoderLayer(nn.Module):
         """
         x2 = self.norm_1(x)
         # Self-attention
-        x_sa, sa = self.attn_1(x2, x2, x2, trg_mask)
+        x_sa, _ = self.attn_1(x2, x2, x2, trg_mask)
         x = x + self.dropout_1(x_sa)
         x2 = self.norm_2(x)
+        # Add self.attn
+        x_sa, sa = self.attn2(x2, x2, x2, trg_mask)
+        x = x + self.dropout_add_1(x_sa)
+        x2 = self.norm_add_1(x)
+        
         # Normal multi-head attention
         x_na, na = self.attn_2(x2, memory, memory, src_mask)
         x = x + self.dropout_2(x_na)
         x2 = self.norm_3(x)
+        
         x = x + self.dropout_3(self.ff(x2))
         return x, (sa, na)
 

@@ -62,15 +62,15 @@ class Transformer(nn.Module):
 
         # define the model
         src_vocab_size, trg_vocab_size = len(self.SRC.vocab), len(self.TRG.vocab)
-        d_model, N, heads, dropout = opt['d_model'], opt['n_layers'], opt['heads'], opt['dropout']
+        d_model, N_en, N_de, heads, dropout = opt['d_model'], opt['n_en_layers'], opt['n_de_layers'], opt['heads'], opt['dropout']
         # get the maximum amount of tokens per sample in encoder. This is useful due to PositionalEncoder requiring this value
         train_ignore_length = self.config.get("train_max_length", const.DEFAULT_TRAIN_MAX_LENGTH)
         input_max_length = self.config.get("input_max_length", const.DEFAULT_INPUT_MAX_LENGTH)
         infer_max_length = self.config.get('max_length', const.DEFAULT_MAX_LENGTH)
         encoder_max_length = max(input_max_length, train_ignore_length)
         decoder_max_length = max(infer_max_length, train_ignore_length)
-        self.encoder = Encoder(src_vocab_size, d_model, N, heads, dropout, max_seq_length=encoder_max_length)
-        self.decoder = Decoder(trg_vocab_size, d_model, N, heads, dropout, max_seq_length=decoder_max_length)
+        self.encoder = Encoder(src_vocab_size, d_model, N_en, heads, dropout, max_seq_length=encoder_max_length)
+        self.decoder = Decoder(trg_vocab_size, d_model, N_de, heads, dropout, max_seq_length=decoder_max_length)
         self.out = nn.Linear(d_model, trg_vocab_size)
 
         # load the beamsearch obj with preset values read from config. ALWAYS require the current model, max_length, and device used as per DecodeStrategy base
@@ -290,7 +290,8 @@ class Transformer(nn.Module):
                     "tgt vocab size": len(self.TRG.vocab),
                     "lr": lr,
                     "d_model": d_model,
-                    "n_layers": opt['n_layers'],
+                    "n_en_layers": opt['n_en_layers'],
+                    "n_de_layers": opt['n_de_layers'],
                     "epochs": opt['epochs'],
                     "batch_size": opt['batch_size']
                 }
