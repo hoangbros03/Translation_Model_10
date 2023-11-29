@@ -290,7 +290,8 @@ class Transformer(nn.Module):
                     "tgt vocab size": len(self.TRG.vocab),
                     "lr": lr,
                     "d_model": d_model,
-                    "n_layers": opt['n_layers'],
+                    "n_en_layers": opt['n_en_layers'],
+                    "n_de_layers": opt['n_de_layers'],
                     "epochs": opt['epochs'],
                     "batch_size": opt['batch_size']
                 }

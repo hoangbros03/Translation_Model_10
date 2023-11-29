@@ -105,17 +105,18 @@ class DecoderLayer(nn.Module):
         """
         x2 = self.norm_1(x)
         # Self-attention
-        x_sa, sa = self.attn_1(x2, x2, x2, trg_mask)
+        x_sa, _ = self.attn_1(x2, x2, x2, trg_mask)
         x = x + self.dropout_1(x_sa)
         x2 = self.norm_2(x)
+        # Add self.attn
+        x_sa, sa = self.attn2(x2, x2, x2, trg_mask)
+        x = x + self.dropout_add_1(x_sa)
+        x2 = self.norm_add_1(x)
+        
         # Normal multi-head attention
         x_na, na = self.attn_2(x2, memory, memory, src_mask)
         x = x + self.dropout_2(x_na)
         x2 = self.norm_3(x)
-        # Add self.attn
-        x_na, na = self.attn2(x2, x2, x2, src_mask)
-        x = x + self.dropout_add_1(x_na)
-        x2 = self.norm_add_1(x)
         
         x = x + self.dropout_3(self.ff(x2))
         return x, (sa, na)
