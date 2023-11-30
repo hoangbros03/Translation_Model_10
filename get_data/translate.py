@@ -1,4 +1,6 @@
 """
+Update: Since Google API doesn't allow us to abusing their system,
+we will translate in a manual but the only way!
 File to process and get the data file of language B from data file of language A
 Input:
     Directory of file of language A
