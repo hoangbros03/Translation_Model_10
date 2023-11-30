@@ -105,7 +105,7 @@ class DecoderLayer(nn.Module):
         """
         x2 = self.norm_1(x)
         # Self-attention
-        x_sa, _ = self.attn_1(x2, x2, x2, trg_mask)
+        x_sa, sa = self.attn_1(x2, x2, x2, trg_mask)
         x = x + self.dropout_1(x_sa)
         x2 = self.norm_2(x)
         # # Add self.attn
