@@ -5,6 +5,8 @@ from torch.utils.data import DataLoader
 from torchtext.data import BucketIterator, Dataset, Example, Field
 from torchtext.datasets import TranslationDataset, Multi30k, IWSLT, WMT14
 from collections import Counter
+from laonlp.tokenize import word_tokenize as lo_word_tokenize
+from underthesea import word_tokenize as vi_word_tokenize
 
 import modules.constants as const
 from utils.save import load_vocab_from_path
@@ -43,7 +45,7 @@ class DefaultLoader:
 
   def build_field(self, **kwargs):
     """Build fields that will handle the conversion from token->idx and vice versa. To be overriden by MultiLoader."""
-    return Field(tokenize=tokenize,**kwargs), Field(init_token=const.DEFAULT_SOS, eos_token=const.DEFAULT_EOS,tokenize=tokenize, **kwargs)
+    return Field(tokenize=lo_word_tokenize,**kwargs), Field(init_token=const.DEFAULT_SOS, eos_token=const.DEFAULT_EOS,tokenize=vi_word_tokenize, **kwargs)
 
   def build_vocab(self, fields, model_path=None, data=None, **kwargs):
     """Build the vocabulary object for torchtext Field. There are three flows:
