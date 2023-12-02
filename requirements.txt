@@ -8,3 +8,4 @@ dill
 pandas
 googletrans-py
 wandb
+python-docx
