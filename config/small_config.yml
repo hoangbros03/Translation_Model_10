@@ -1,8 +1,8 @@
 # data location and config section
 data:
-  train_data_location: data/iwslt_en_vi/train
-  eval_data_location:  data/iwslt_en_vi/tst2013
-  src_lang: .en 
+  train_data_location: data/nlp_lovi_data/train_processed_subset
+  eval_data_location:  data/nlp_lovi_data/dev_processed
+  src_lang: .lo
   trg_lang: .vi 
 log_file_models: 'model.log'
 lowercase: false
@@ -12,8 +12,9 @@ build_vocab_kwargs: # additional arguments for build_vocab. See torchtext.vocab.
 # model parameters section
 device: cuda
 d_model: 512
-n_layers: 6
-heads: 8
+n_en_layers: 3
+n_de_layers: 2
+heads: 16
 # inference section
 eval_batch_size: 8
 decode_strategy: BeamSearch
@@ -36,10 +37,10 @@ optimizer_params:
   eps: !!float 1e-9
 n_warmup_steps: 4000
 label_smoothing: 0.1
-dropout: 0.1
+dropout: 0.15
 # training config, evaluation, save & load section
 batch_size: 64
-epochs: 20
+epochs: 40
 printevery: 200
 save_checkpoint_epochs: 1
 maximum_saved_model_eval: 5
