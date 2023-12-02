@@ -1,6 +1,6 @@
 # data location and config section
 data:
-  train_data_location: data/nlp_lovi_data/train_processed
+  train_data_location: data/nlp_lovi_data/train_processed_subset
   eval_data_location:  data/nlp_lovi_data/dev_processed
   src_lang: .lo
   trg_lang: .vi 
