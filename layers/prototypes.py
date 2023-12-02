@@ -32,9 +32,9 @@ class PositionalEncoder(nn.Module):
     
     def forward(self, x):
         if(x.shape[1] > self._max_seq_length):
+            # print(f"Too long x shape in PE: {x.shape}")
             logging.warn("Input longer than maximum supported length for PE detected. Build a model with a larger input_max_length limit if you want to keep the input; or ignore if you want the input trimmed")
-            x = x[:, x:self._max_seq_length]
-        
+            x = x[:, :self._max_seq_length, :]
         x = x * math.sqrt(self.d_model)
         
         spliced_pe = self.splice_by_size(self.pe, x) # self.pe[:, :x.shape[1]]
@@ -102,7 +102,7 @@ class MultiHeadAttention(nn.Module):
     
 #        d_k = q.shape[-1]
         scores = torch.matmul(q, k.transpose(-2, -1)) / math.sqrt(self.d_k)
-        
+        # print(f"scores shape: {scores.shape}, mask shape: {mask.shape}")
         if mask is not None:
             mask = mask.unsqueeze(1) # add a dimension to account for head
             scores = scores.masked_fill(mask==0, -1e9)

@@ -69,6 +69,7 @@ class Transformer(nn.Module):
         infer_max_length = self.config.get('max_length', const.DEFAULT_MAX_LENGTH)
         encoder_max_length = max(input_max_length, train_ignore_length)
         decoder_max_length = max(infer_max_length, train_ignore_length)
+        print(f"En max length: {encoder_max_length}, de max length: {decoder_max_length}")
         self.encoder = Encoder(src_vocab_size, d_model, N_en, heads, dropout, max_seq_length=encoder_max_length)
         self.decoder = Decoder(trg_vocab_size, d_model, N_de, heads, dropout, max_seq_length=decoder_max_length)
         self.out = nn.Linear(d_model, trg_vocab_size)
@@ -142,7 +143,7 @@ class Transformer(nn.Module):
         src_pad = self.SRC.vocab.stoi['<pad>']
         trg_pad = self.TRG.vocab.stoi['<pad>']
         ys = trg[:, 1:].contiguous().view(-1)
-
+        
         # create mask and perform network forward
         src_mask, trg_mask = create_masks(src, trg_input, src_pad, trg_pad, opt.get('device', const.DEFAULT_DEVICE))
         preds = self(src, trg_input, src_mask, trg_mask)

@@ -46,6 +46,7 @@ class EncoderLayer(nn.Module):
             an output that have the same shape as input, [batch_size, src_len, d_model]
             the attention used [batch_size, src_len, src_len]
         """
+        # print(f"x shape in start of en layer: {x.shape}")
         x2 = self.norm_1(x)
         # Self attention only
         x_sa, _ = self.attn(x2, x2, x2, src_mask)
@@ -167,7 +168,9 @@ class Encoder(nn.Module):
         x = self.pe(x)
         attentions = [None] * self.N
         for i in range(self.N):
+            
             x, attn = self.layers[i](x, src_mask)
+            # print(f"x shape: {x.shape}, attn shape: {attn.shape}")
             attentions[i] = attn
         x = self.norm(x)
         return x if(not output_attention) else (x, attentions)
@@ -192,7 +195,7 @@ class Decoder(nn.Module):
 
         self._max_seq_length = max_seq_length
 
-    def forward(self, trg, memory, src_mask, trg_mask, output_attention=False):
+    def forward(self, trg, memory, src_mask, trg_mask, output_attention=False, seq_length_check=True):
         """Accepts a batch of indexed tokens and the encoding outputs, return the decoded values.
         Args:
             trg: input Tensor of [batch_size, trg_len]
@@ -204,9 +207,14 @@ class Decoder(nn.Module):
             the decoded values [batch_size, tgt_len, d_model]
             if available, list of N (self-attention, attention) calculated. They are in form of [batch_size, heads, tgt_len, tgt/src_len]
         """
+        if(seq_length_check):
+            trg = trg[:, :self._max_seq_length]
+            trg_mask = trg_mask[:, :self._max_seq_length , :self._max_seq_length]
+            src_mask = src_mask[:, :, :self._max_seq_length]
+            # print(f"Findddd: {src_mask.shape}")
         x = self.embed(trg)
         x = self.pe(x)
-
+        # print(f"seqde shape: {src_mask.shape}")
         attentions = [None] * self.N
         for i in range(self.N):
             x, attn = self.layers[i](x, memory, src_mask, trg_mask)

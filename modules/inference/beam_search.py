@@ -47,13 +47,14 @@ class BeamSearch(DecodeStrategy):
 
         # Encoder
 #        raise Exception(src.shape, src_mask.shape)
-        e_output = model.encode(src, src_mask)
+        # print(f"src shape: {src.shape}, src_mask shape: {src_mask.shape}")
+        e_output = model.encode(src, src_mask, seq_length_check=True)
         outputs = torch.LongTensor([[init_tok] for i in range(batch_size)])
         outputs = outputs.to(self.device)
         trg_mask = no_peeking_mask(1, self.device)
 
         # Decoder
-        out = model.to_logits(model.decode(outputs, e_output, src_mask, trg_mask))
+        out = model.to_logits(model.decode(outputs, e_output, src_mask, trg_mask, seq_length_check=True))
         out = functional.softmax(out, dim=-1)
         probs, ix = out[:, -1].data.topk(self.beam_size)
 
