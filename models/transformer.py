@@ -325,6 +325,8 @@ class Transformer(nn.Module):
         logging.info("* Number of parameters: %s"%(params_encode+params_decode))
         logging.info("Starting training on %s"%(opt.get('device', const.DEFAULT_DEVICE)))
 
+        bleu_his = [0]
+
         for epoch in range(checkpoint_idx, opt['epochs']):
             total_loss = 0.0
             
@@ -361,6 +363,13 @@ class Transformer(nn.Module):
 #                bleuscore = bleu_batch(self, self.loader._eval_data, batch_size=opt.get('eval_batch_size', const.DEFAULT_EVAL_BATCH_SIZE))
                 valid_src_lang, valid_trg_lang = self.loader.language_tuple
                 bleuscore = bleu_batch_iter(self, self.valid_iter, src_lang=valid_src_lang, trg_lang=valid_trg_lang)
+                if bleuscore is not None:
+                    bleu_his.append(bleuscore)
+                else:
+                    print("Weird error happen")
+                    bleuscore = bleu_his[-1]
+                    bleu_his.append(bleuscore)
+
 
 #                save_model_to_path(model, model_dir, checkpoint_idx=epoch+1)
                 saver.save_and_clear_model(model, model_dir, checkpoint_idx=epoch+1, maximum_saved_model=opt.get('maximum_saved_model_train', const.DEFAULT_NUM_KEEP_MODEL_TRAIN))

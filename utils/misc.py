@@ -12,7 +12,6 @@ def no_peeking_mask(size, device):
     k=1).astype('uint8')
     np_mask =  Variable(torch.from_numpy(np_mask) == 0)
     np_mask = np_mask.to(device)
-
     return np_mask
 
 def create_masks(src, trg, src_pad, trg_pad, device):
