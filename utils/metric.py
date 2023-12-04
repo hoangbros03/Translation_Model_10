@@ -61,7 +61,7 @@ def bleu_batch_iter(model, valid_iter, src_lang=None, trg_lang=None, eos_token="
         result = bleu_score(predictions, labels)
     except Exception as e:
         print(f"Error: {e}")
-        print(f"Debug: predictions shape: {len(prediction)}, labels shape: {len(labels)}")
+        print(f"Debug: predictions shape: {len(predictions)}, labels shape: {len(labels)}")
         result = None
     return result
   
