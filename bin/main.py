@@ -39,6 +39,8 @@ if __name__ == "__main__":
   parser.add_argument("--checkpoint_idx", type=int, default=0, help="All mode: specify the epoch of the checkpoint loaded. Only useful for training.")
   parser.add_argument("--serve_path", type=str, default=None, help="File to save TorchScript model into.")
   parser.add_argument("--wandb_key", type=str, default=None, help="Wandb key if you want to log anything.")
+  parser.add_argument("--save_data_obj", action='store_true', help="Do you want to save data obj?")
+  parser.add_argument("--load_data_obj", action='store_true', help="Do you want to load data obj?")
   
   args = parser.parse_args()
   # create directory if not exist

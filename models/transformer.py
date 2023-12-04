@@ -447,7 +447,7 @@ class Transformer(nn.Module):
         # bundle within dictionary
         needed_fn = {'forward': (sample_src, sample_trg, sample_src_mask, sample_trg_mask), "encode": (sample_src, sample_src_mask), "decode": (sample_trg, sample_encoded, sample_src_mask, sample_trg_mask), "to_logits": sample_before_logits}
         # create the ScriptModule. Currently disabling deterministic check
-        traced_model = torch.jit.trace_module(self, needed_fn, check_trace=check_trace)
+        traced_model = torch.jit.trace_xmodule(self, needed_fn, check_trace=check_trace)
         # save it down
         torch.jit.save(traced_model, serve_path)
         return serve_path

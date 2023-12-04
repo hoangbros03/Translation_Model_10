@@ -18,7 +18,10 @@ class DefaultLoader:
     self._train_path = train_path_or_name
     self._eval_path = eval_path
     self._option = option
-
+    self.save = self._option.get("save_data_obj", False)
+    self.load_from_pkl = self._option.get("load_data_obj", False)
+    if self.load_from_pkl:
+      print("You choose the option load_from_pkl to True, remember to place the files in the right dir")
   @property
   def language_tuple(self):
     """DefaultLoader will use the default lang option @bleu_batch_iter <sos>, hence, None"""
@@ -45,7 +48,9 @@ class DefaultLoader:
 
   def build_field(self, **kwargs):
     """Build fields that will handle the conversion from token->idx and vice versa. To be overriden by MultiLoader."""
-    return Field(tokenize=lo_word_tokenize,**kwargs), Field(init_token=const.DEFAULT_SOS, eos_token=const.DEFAULT_EOS,tokenize=vi_word_tokenize, **kwargs)
+    field1 = Field(tokenize=lo_word_tokenize,**kwargs)
+    field2 = Field(init_token=const.DEFAULT_SOS, eos_token=const.DEFAULT_EOS,tokenize=vi_word_tokenize, **kwargs)
+    return field1, field2 
 
   def build_vocab(self, fields, model_path=None, data=None, **kwargs):
     """Build the vocabulary object for torchtext Field. There are three flows:
@@ -60,8 +65,22 @@ class DefaultLoader:
       if(data is not None):
         print("Building vocab from received data.")
         # build the vocab using formatted data.
-        src_field.build_vocab(data, **kwargs)
-        trg_field.build_vocab(data, **kwargs)
+        if not self.load_from_pkl:
+          src_field.build_vocab(data, **kwargs)
+          trg_field.build_vocab(data, **kwargs)
+          if self.save:
+            file_name = 'vocab1.pkl'
+            with open(file_name, 'wb') as file:
+                pickle.dump(src_field, file)
+                print(f'Object successfully saved to "{file_name}"')
+            file_name = 'vocab2.pkl'
+            with open(file_name, 'wb') as file:
+                pickle.dump(trg_field, file)
+                print(f'Object successfully saved to "{file_name}"')
+        else:
+          src_field = pickle.load(open('vocab1.pkl', 'rb'))
+          trg_field = pickle.load(open('vocab2.pkl', 'rb'))
+          
       else:
         print("Building vocab from preloaded text file.")
         # load the vocab values from external location (a formatted text file). Initialize values as random
@@ -109,7 +128,20 @@ class DefaultLoader:
     self.build_vocab(fields, data=train_data, model_path=model_path, **build_vocab_kwargs)
 #    raise Exception("{}".format(len(src_field.vocab)))
     # crafting iterators
-    train_iter = BucketIterator(train_data, batch_size=self._option.get("batch_size", const.DEFAULT_BATCH_SIZE), device=self._option.get("device", const.DEFAULT_DEVICE) )
-    eval_iter = BucketIterator(eval_data, batch_size=self._option.get("eval_batch_size", const.DEFAULT_EVAL_BATCH_SIZE), device=self._option.get("device", const.DEFAULT_DEVICE), train=False )
+    if not self.load_from_pkl:
+      train_iter = BucketIterator(train_data, batch_size=self._option.get("batch_size", const.DEFAULT_BATCH_SIZE), device=self._option.get("device", const.DEFAULT_DEVICE) )
+      eval_iter = BucketIterator(eval_data, batch_size=self._option.get("eval_batch_size", const.DEFAULT_EVAL_BATCH_SIZE), device=self._option.get("device", const.DEFAULT_DEVICE), train=False )
+      if self.save:
+        file_name = 'train_iter.pkl'
+        with open(file_name, 'wb') as file:
+            pickle.dump(train_iter, file)
+            print(f'Object successfully saved to "{file_name}"')
+        file_name = 'eval_iter.pkl'
+        with open(file_name, 'wb') as file:
+            pickle.dump(eval_iter, file)
+            print(f'Object successfully saved to "{file_name}"')
+    else:
+      train_iter = pickle.load(open('train_iter.pkl', 'rb'))
+      eval_iter = pickle.load(open('eval_iter.pkl', 'rb'))
     return train_iter, eval_iter
 
