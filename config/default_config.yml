@@ -1,6 +1,6 @@
 # data location and config section
 data:
-  train_data_location: data/nlp_lovi_data/train_processed
+  train_data_location: data/nlp_lovi_data/all_data
   eval_data_location:  data/nlp_lovi_data/dev_processed
   src_lang: .lo
   trg_lang: .vi 
@@ -45,3 +45,4 @@ printevery: 200
 save_checkpoint_epochs: 1
 maximum_saved_model_eval: 5
 maximum_saved_model_train: 5
+save_data_obj: True

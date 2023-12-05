@@ -20,6 +20,7 @@ class DefaultLoader:
     self._option = option
     self.save = self._option.get("save_data_obj", False)
     self.load_from_pkl = self._option.get("load_data_obj", False)
+    self.new_tokenize= self._option.get("new_tokenize", False)
     if self.load_from_pkl:
       print("You choose the option load_from_pkl to True, remember to place the files in the right dir")
   @property
@@ -48,8 +49,12 @@ class DefaultLoader:
 
   def build_field(self, **kwargs):
     """Build fields that will handle the conversion from token->idx and vice versa. To be overriden by MultiLoader."""
-    field1 = Field(tokenize=lo_word_tokenize,**kwargs)
-    field2 = Field(init_token=const.DEFAULT_SOS, eos_token=const.DEFAULT_EOS,tokenize=vi_word_tokenize, **kwargs)
+    if self.new_tokenize:
+        field1 = Field(tokenize=lo_word_tokenize,**kwargs)
+        field2 = Field(init_token=const.DEFAULT_SOS, eos_token=const.DEFAULT_EOS,tokenize=vi_word_tokenize, **kwargs)
+    else:
+        field1 = Field(**kwargs)
+        field2 = Field(init_token=const.DEFAULT_SOS, eos_token=const.DEFAULT_EOS,**kwargs)
     return field1, field2 
 
   def build_vocab(self, fields, model_path=None, data=None, **kwargs):
@@ -128,20 +133,8 @@ class DefaultLoader:
     self.build_vocab(fields, data=train_data, model_path=model_path, **build_vocab_kwargs)
 #    raise Exception("{}".format(len(src_field.vocab)))
     # crafting iterators
-    if not self.load_from_pkl:
-      train_iter = BucketIterator(train_data, batch_size=self._option.get("batch_size", const.DEFAULT_BATCH_SIZE), device=self._option.get("device", const.DEFAULT_DEVICE) )
-      eval_iter = BucketIterator(eval_data, batch_size=self._option.get("eval_batch_size", const.DEFAULT_EVAL_BATCH_SIZE), device=self._option.get("device", const.DEFAULT_DEVICE), train=False )
-      if self.save:
-        file_name = 'train_iter.pkl'
-        with open(file_name, 'wb') as file:
-            pickle.dump(train_iter, file)
-            print(f'Object successfully saved to "{file_name}"')
-        file_name = 'eval_iter.pkl'
-        with open(file_name, 'wb') as file:
-            pickle.dump(eval_iter, file)
-            print(f'Object successfully saved to "{file_name}"')
-    else:
-      train_iter = pickle.load(open('train_iter.pkl', 'rb'))
-      eval_iter = pickle.load(open('eval_iter.pkl', 'rb'))
+    
+    train_iter = BucketIterator(train_data, batch_size=self._option.get("batch_size", const.DEFAULT_BATCH_SIZE), device=self._option.get("device", const.DEFAULT_DEVICE) )
+    eval_iter = BucketIterator(eval_data, batch_size=self._option.get("eval_batch_size", const.DEFAULT_EVAL_BATCH_SIZE), device=self._option.get("device", const.DEFAULT_DEVICE), train=False )
     return train_iter, eval_iter
 
