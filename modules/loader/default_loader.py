@@ -29,6 +29,8 @@ class DefaultLoader:
     return None, None
 
   def tokenize(self, sentence):
+    if self._option.get("pre_tokenize", False):
+      return sentence.strip().split("𐇛")
     return sentence.strip().split()
 
   def detokenize(self, list_of_tokens):
@@ -53,8 +55,8 @@ class DefaultLoader:
         field1 = Field(tokenize=lo_word_tokenize,**kwargs)
         field2 = Field(init_token=const.DEFAULT_SOS, eos_token=const.DEFAULT_EOS,tokenize=vi_word_tokenize, **kwargs)
     else:
-        field1 = Field(**kwargs)
-        field2 = Field(init_token=const.DEFAULT_SOS, eos_token=const.DEFAULT_EOS,**kwargs)
+        field1 = Field(tokenize=self.tokenize,**kwargs)
+        field2 = Field(init_token=const.DEFAULT_SOS, eos_token=const.DEFAULT_EOS,tokenize=self.tokenize, **kwargs)
     return field1, field2 
 
   def build_vocab(self, fields, model_path=None, data=None, **kwargs):
