@@ -32,6 +32,10 @@ def _revert_trg(sent, eos): # revert batching process on sentence
         endloc = sent.index(eos)
         return sent[1:endloc]
     except ValueError:
+        print(f"There is an error in _revert_trg")
+        with open("bug_log.txt", "w") as f:
+            f.write(f"sent: {sent}\n")
+            f.write(f"eos: {eos}\n")
         return sent[1:]
 
 def bleu_batch_iter(model, valid_iter, src_lang=None, trg_lang=None, eos_token="<eos>", debug=False):
@@ -62,6 +66,11 @@ def bleu_batch_iter(model, valid_iter, src_lang=None, trg_lang=None, eos_token="
     except Exception as e:
         print(f"Error: {e}")
         print(f"Debug: predictions shape: {len(predictions)}, labels shape: {len(labels)}")
+        with open("bug_log.txt", "w") as f:
+            f.write(f"First 10 predictions: {predictions[:10]}\n")
+            f.write(f"First 10 labels: {labels[:10]}\n")
+            f.write(f"predictions: {predictions}\n")
+            f.write(f"labels: {labels}\n")
         result = None
     return result
   

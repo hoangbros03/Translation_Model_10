@@ -72,21 +72,8 @@ class DefaultLoader:
       if(data is not None):
         print("Building vocab from received data.")
         # build the vocab using formatted data.
-        if not self.load_from_pkl:
-          src_field.build_vocab(data, **kwargs)
-          trg_field.build_vocab(data, **kwargs)
-          if self.save:
-            file_name = 'vocab1.pkl'
-            with open(file_name, 'wb') as file:
-                pickle.dump(src_field, file)
-                print(f'Object successfully saved to "{file_name}"')
-            file_name = 'vocab2.pkl'
-            with open(file_name, 'wb') as file:
-                pickle.dump(trg_field, file)
-                print(f'Object successfully saved to "{file_name}"')
-        else:
-          src_field = pickle.load(open('vocab1.pkl', 'rb'))
-          trg_field = pickle.load(open('vocab2.pkl', 'rb'))
+        src_field.build_vocab(data, **kwargs)
+        trg_field.build_vocab(data, **kwargs)
           
       else:
         print("Building vocab from preloaded text file.")
