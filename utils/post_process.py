@@ -22,7 +22,7 @@ def post_process(sentence):
     # sentence = sentence + "\n"
     return sentence
 
-def process(input_path, output_path):
+def get_post_process_file(input_path, output_path):
     with open(input_path,"r") as f:
         data = f.readlines()
     print(f"Total sentences: {len(data)}")
@@ -38,4 +38,4 @@ if __name__ == "__main__":
     parser.add_argument("--input", help="Input file", type=str, required=True)
     parser.add_argument("--output", help="Output file", type=str, required= True)
     args = parser.parse_args()
-    process(args.input, args.output)
+    get_post_process_file(args.input, args.output)

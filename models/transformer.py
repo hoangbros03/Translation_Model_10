@@ -17,6 +17,7 @@ from utils.decode_old import create_masks, translate_sentence
 #from utils.data import create_fields, create_dataset, read_data, read_file, write_file
 from utils.loss import LabelSmoothingLoss
 from utils.metric import bleu, bleu_batch_iter, bleu_single, bleu_batch
+from utils.post_process import get_post_process_file
 #from utils.save import load_model_from_path, check_model_in_path, save_and_clear_model, write_model_score, load_model_score, save_model_best_to_path, load_model
 
 class Transformer(nn.Module):
@@ -417,6 +418,10 @@ class Transformer(nn.Module):
         # Write results to system file
         print("Writing results to {} ...".format(predictions_file))
         with io.open(predictions_file, "w", encoding="utf-8") as write_file:
+            write_file.write(results)
+
+        # Write post-process results
+        with io.open(f"{predictions_file[:-3]}_processed.{predictions_file[-2:]}", "w", encoding="utf-8") as write_file:
             write_file.write(results)
 
         print("All done!")
