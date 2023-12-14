@@ -18,6 +18,9 @@ class DefaultLoader:
     self._train_path = train_path_or_name
     self._eval_path = eval_path
     self._option = option
+    # self.save = self._option.get("save_data_obj", False)
+    # self.load_from_pkl = self._option.get("load_data_obj", False)
+    self.pre_tokenize= self._option.get("pre_tokenize", False)
 
   @property
   def language_tuple(self):
@@ -25,6 +28,8 @@ class DefaultLoader:
     return None, None
 
   def tokenize(self, sentence):
+    if self._option.get("pre_tokenize", False):
+      return sentence.strip().split("𐇛")
     return sentence.strip().split()
 
   def detokenize(self, list_of_tokens):
@@ -45,7 +50,13 @@ class DefaultLoader:
 
   def build_field(self, **kwargs):
     """Build fields that will handle the conversion from token->idx and vice versa. To be overriden by MultiLoader."""
-    return Field(tokenize=lo_word_tokenize,**kwargs), Field(init_token=const.DEFAULT_SOS, eos_token=const.DEFAULT_EOS,tokenize=vi_word_tokenize, **kwargs)
+    if not self.pre_tokenize:
+      field1 = Field(tokenize=lo_word_tokenize,**kwargs)
+      field2 = Field(init_token=const.DEFAULT_SOS, eos_token=const.DEFAULT_EOS,tokenize=vi_word_tokenize, **kwargs)
+    else:
+      field1 = Field(tokenize=self.tokenize,**kwargs)
+      field2 = Field(init_token=const.DEFAULT_SOS, eos_token=const.DEFAULT_EOS,tokenize=self.tokenize, **kwargs)
+    return field1, field2 
 
   def build_vocab(self, fields, model_path=None, data=None, **kwargs):
     """Build the vocabulary object for torchtext Field. There are three flows:
